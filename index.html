@@ -290,11 +290,11 @@
     .importe-box { display:flex; align-items:center; gap:6px; background:var(--sup); border-radius:22px; padding:12px 18px 10px; box-shadow:var(--sombra); cursor:text; transition:box-shadow .2s; }
     .importe-box.activo { box-shadow:0 0 0 2px var(--acento), var(--sombra); }
     .imp-disp { flex:1; min-width:0; text-align:center; }
-    .imp-expr { font:800 46px/1.15 var(--f2); letter-spacing:-.03em; white-space:nowrap; overflow:hidden; font-variant-numeric:tabular-nums; }
+    .imp-expr { font:800 46px/1.15 var(--f2); letter-spacing:-.03em; white-space:nowrap; overflow:hidden; font-variant-numeric:tabular-nums; height:56px; line-height:56px; }
     .imp-expr.vacio { color:var(--linea); }
     .importe-box.activo .imp-expr::after { content:""; display:inline-block; width:3px; height:.8em; background:var(--acento); margin-left:3px; vertical-align:-.05em; border-radius:2px; animation:parpadeo 1s steps(1) infinite; }
     @keyframes parpadeo { 50% { opacity:0; } }
-    .imp-res { font-size:14px; font-weight:800; color:var(--acento-tinta); min-height:18px; }
+    .imp-res { font-size:14px; font-weight:800; color:var(--acento-tinta); height:18px; line-height:18px; white-space:nowrap; overflow:hidden; }
     .importe-box > span { font:800 30px var(--f2); color:var(--tenue); }
     .teclado { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:10px; }
     .tecla { height:52px; border-radius:15px; background:var(--sup); box-shadow:0 1px 2px rgba(0,0,0,.06); font:700 23px var(--f2); transition:transform .08s, background .15s; user-select:none; -webkit-user-select:none; }
@@ -541,7 +541,7 @@
     .cocina { position:fixed; inset:0; z-index:90; background:var(--bg); display:flex; flex-direction:column; padding:calc(10px + var(--sa-t, env(safe-area-inset-top))) 18px calc(12px + var(--sa-b)); }
     .cocina[hidden] { display:none; }
     .ck-cab { display:flex; align-items:center; gap:12px; }
-    .ck-cab > button { width:40px; height:40px; border-radius:50%; background:var(--sup2); font-weight:800; flex:none; }
+    .ck-cab > button { height:40px; padding:0 14px 0 10px; border-radius:99px; background:var(--sup2); font-weight:800; font-size:15px; color:var(--acento-tinta); flex:none; }
     .ck-cab b { display:block; font-size:17px; }
     .ck-cab small { color:var(--suave); font-weight:700; }
     .ck-progreso { height:6px; border-radius:99px; background:var(--sup2); margin:12px 0; overflow:hidden; }
@@ -575,13 +575,14 @@
     .wrap { padding-bottom:calc(132px + var(--sa-b)); }
 
     /* barra de abajo flotante */
-    .tabbar { left:12px; right:12px; bottom:calc(10px + var(--sa-b)); max-width:536px; margin:0 auto; padding:6px 8px; border-radius:30px; border:1px solid color-mix(in srgb, var(--linea) 70%, transparent);
-      background:color-mix(in srgb, var(--sup) 80%, transparent); box-shadow:var(--sombra-fuerte); }
+    .tabbar { left:0; right:0; bottom:0; max-width:none; margin:0; padding:6px 10px calc(6px + var(--sa-b)); border-radius:24px 24px 0 0; border:0; border-top:1px solid var(--linea);
+      background:var(--sup); -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:0 -8px 24px -12px rgba(30,26,20,.18); }
+    :root[data-theme="dark"] .tabbar { box-shadow:0 -8px 24px -12px rgba(0,0,0,.6); }
     .tab { position:relative; isolation:isolate; padding:7px 0 5px; font-size:10.5px; letter-spacing:.01em; }
     .tab::before { content:""; position:absolute; z-index:-1; top:3px; left:50%; width:54px; height:32px; border-radius:99px; background:var(--acento-suave); transform:translateX(-50%) scale(.6); opacity:0; transition:transform .25s cubic-bezier(.3,1.4,.5,1), opacity .2s; }
     .tab.on::before { transform:translateX(-50%) scale(1); opacity:1; }
     .tab svg { width:23px; height:23px; }
-    .tab-mas { width:60px; height:60px; margin:-30px 4px 0; border-radius:50%; box-shadow:0 0 0 5px var(--bg), 0 12px 26px -6px color-mix(in srgb, var(--acento) 75%, transparent); background:radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--acento) 70%, #fff), var(--acento) 60%); }
+    .tab-mas { width:60px; height:60px; margin:-30px 4px 0; border-radius:50%; box-shadow:0 0 0 5px var(--sup), 0 12px 26px -6px color-mix(in srgb, var(--acento) 75%, transparent); background:radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--acento) 70%, #fff), var(--acento) 60%); }
 
     /* controles */
     .seg { border-radius:16px; padding:4px; background:color-mix(in srgb, var(--sup2) 85%, transparent); }
@@ -953,7 +954,7 @@
 
   <!-- modo cocina -->
   <div class="cocina" id="cocina" hidden role="dialog" aria-modal="true" aria-labelledby="ck-titulo">
-    <div class="ck-cab"><button type="button" id="ck-cerrar" aria-label="Cerrar">✕</button><span><b id="ck-titulo"></b><small id="ck-num"></small></span></div>
+    <div class="ck-cab"><button type="button" id="ck-cerrar" aria-label="Volver a la receta">‹ Receta</button><span><b id="ck-titulo"></b><small id="ck-num"></small></span></div>
     <div class="ck-progreso"><i id="ck-barra"></i></div>
     <div class="ck-tempo" id="ck-tempo" hidden><span>⏱ <b>0:00</b></span><button type="button" id="ck-tempo-x" aria-label="Parar temporizador">✕</button></div>
     <div class="ck-cuerpo">
@@ -1955,12 +1956,13 @@
 
     // ── hojas ──────────────────────────────────────────────────────────
     let sheetAbierta = null;
-    function abrirSheet(id) {
+    function abrirSheet(id, enSuSitio = false) {
       if (sheetAbierta) cerrarSheet(true);
       sheetAbierta = id;
       $('#' + id).classList.add('on'); $('#velo').classList.add('on');
       $('#' + id + ' .sheet-cuerpo').scrollTop = 0;
-      history.pushState({ sheet: id }, '');
+      // enSuSitio: ocupa la entrada actual del historial (al volver del modo cocina) en vez de añadir otra
+      if (enSuSitio) history.replaceState({ sheet: id }, ''); else history.pushState({ sheet: id }, '');
     }
     function cerrarSheet(desdeHistorial) {
       if (!sheetAbierta) return;
@@ -2039,8 +2041,9 @@
       const e = CALC[id].expr, el = $(`#${id}-expr`);
       el.textContent = e ? e.replace(/([+−×])/g, ' $1 ') : '0';
       el.classList.toggle('vacio', !e);
-      const n = el.textContent.length;
-      el.style.fontSize = n <= 8 ? '' : n <= 12 ? '34px' : n <= 18 ? '26px' : '20px';
+      // el número se encoge lo justo para caber; el cuadro mantiene siempre su altura
+      let tam = 46; el.style.fontSize = tam + 'px';
+      while (el.scrollWidth > el.clientWidth && tam > 18) { tam -= 2; el.style.fontSize = tam + 'px'; }
       $(`#${id}-res`).textContent = /[+−×]/.test(e) ? '= ' + eur(evalExpr(e)) : '';
     }
     function ponerCalc(id, cents) { CALC[id].expr = aTexto(cents); pintarCalc(id); }
@@ -3854,18 +3857,25 @@
     // ── modo cocina: un paso por pantalla, letra grande y temporizador ─
     let CK = null, avisoTempo = null;
     function abrirCocina(r) {
-      CK = { r, paso: 0, ings: false };
+      // si vuelves a la misma receta, sigues en el paso donde lo dejaste
+      const mismo = CK && CK.r.id === r.id && !CK.terminada;
+      CK = { r, paso: mismo ? CK.paso : 0, ings: false, hueco: RC?.hueco || null, scroll: $('#sh-receta .sheet-cuerpo').scrollTop };
       // la hoja de la receta deja su sitio en el historial al modo cocina (así «atrás» cierra el modo cocina)
       if (sheetAbierta) { cerrarSheet(true); history.replaceState({ cocina: 1 }, ''); } else history.pushState({ cocina: 1 }, '');
       pantallaEncendida(true);
       $('#cocina').hidden = false; document.body.style.overflow = 'hidden';
       pintarCocina();
     }
-    function cerrarCocina(desdeHistorial) {
+    // al salir del modo cocina se vuelve a la ficha de la receta, en el mismo punto (salvo al terminarla)
+    function cerrarCocina(desdeHistorial, aLaReceta = true) {
       if ($('#cocina').hidden) return;
       $('#cocina').hidden = true; document.body.style.overflow = '';
-      if (!modoSuper()) pantallaEncendida(false);
-      if (!desdeHistorial && history.state?.cocina) history.back();
+      if (!modoSuper() && !tempo) pantallaEncendida(false);
+      if (!aLaReceta) { if (!desdeHistorial && history.state?.cocina) history.back(); return; }
+      RC = { r: CK.r, hueco: CK.hueco };
+      pintarReceta();
+      abrirSheet('sh-receta', !desdeHistorial);
+      $('#sh-receta .sheet-cuerpo').scrollTop = CK.scroll || 0;
     }
     // «cuece 20 minutos», «de 10 a 12 minutos», «1 hora»…
     function tiemposDe(txt) {
@@ -3892,7 +3902,7 @@
     }
     function moverPaso(d) {
       const n = CK.r.pasos.length;
-      if (CK.paso + d >= n) { cerrarCocina(); vibrar(); const mk = marcaDe(CK.r.id); if (!E.sinMarcas) guardarMarca(CK.r.id, { veces: (mk?.veces || 0) + 1, ultima: hoy() }); return descontarReceta(CK.r); }
+      if (CK.paso + d >= n) { CK.terminada = true; cerrarCocina(false, false); vibrar(); const mk = marcaDe(CK.r.id); if (!E.sinMarcas) guardarMarca(CK.r.id, { veces: (mk?.veces || 0) + 1, ultima: hoy() }); return descontarReceta(CK.r); }
       CK.paso = Math.max(0, CK.paso + d); vibrar(); pintarCocina();
     }
     // temporizador (sigue aunque cambies de paso)
