@@ -36,7 +36,7 @@
       --sombra:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.3);
     }
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-    html { background:var(--bg); }
+    html { background:var(--bg); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
     body { background:var(--bg); color:var(--tinta); font-family:var(--f); font-size:16px; min-height:100dvh; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; }
     button, input, select, textarea { font:inherit; color:inherit; }
     button { cursor:pointer; background:none; border:0; }
@@ -287,14 +287,15 @@
     .et:first-child { margin-top:4px; }
 
     /* importe + teclado calculadora */
-    .importe-box { display:flex; align-items:center; gap:6px; background:var(--sup); border-radius:22px; padding:12px 18px 10px; box-shadow:var(--sombra); cursor:text; transition:box-shadow .2s; }
+    .importe-box { display:flex; align-items:center; gap:6px; height:96px; background:var(--sup); border-radius:22px; padding:8px 18px; box-shadow:var(--sombra); cursor:text; transition:box-shadow .2s; }
     .importe-box.activo { box-shadow:0 0 0 2px var(--acento), var(--sombra); }
-    .imp-disp { flex:1; min-width:0; text-align:center; }
-    .imp-expr { font:800 46px/1.15 var(--f2); letter-spacing:-.03em; white-space:nowrap; overflow:hidden; font-variant-numeric:tabular-nums; height:56px; line-height:56px; }
-    .imp-expr.vacio { color:var(--linea); }
-    .importe-box.activo .imp-expr::after { content:""; display:inline-block; width:3px; height:.8em; background:var(--acento); margin-left:3px; vertical-align:-.05em; border-radius:2px; animation:parpadeo 1s steps(1) infinite; }
+    .imp-disp { flex:1; min-width:0; height:100%; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+    .imp-expr { height:58px; flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .imp-num { display:block; font:800 46px/1 var(--f2); letter-spacing:-.03em; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .imp-expr.imp-vacio .imp-num { color:var(--linea); }
+    .importe-box.activo .imp-num::after { content:""; display:inline-block; width:3px; height:.8em; background:var(--acento); margin-left:3px; vertical-align:-.05em; border-radius:2px; animation:parpadeo 1s steps(1) infinite; }
     @keyframes parpadeo { 50% { opacity:0; } }
-    .imp-res { font-size:14px; font-weight:800; color:var(--acento-tinta); height:18px; line-height:18px; white-space:nowrap; overflow:hidden; }
+    .imp-res { flex:none; font-size:14px; font-weight:800; color:var(--acento-tinta); height:18px; line-height:18px; white-space:nowrap; overflow:hidden; }
     .importe-box > span { font:800 30px var(--f2); color:var(--tenue); }
     .teclado { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:10px; }
     .tecla { height:52px; border-radius:15px; background:var(--sup); box-shadow:0 1px 2px rgba(0,0,0,.06); font:700 23px var(--f2); transition:transform .08s, background .15s; user-select:none; -webkit-user-select:none; }
@@ -976,7 +977,7 @@
     const SUPABASE_KEY = 'sb_publishable_d-eUrX-9AZRWNpczlofKEQ_fp299RSE';
 
     const CONFIGURADO = /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && !/PEGA/.test(SUPABASE_KEY);
-    const VERSION = '11.0';
+    const VERSION = '11.1';
 
     const CATS = [
       { id:'super',         n:'Súper',        e:'🛒', c:'#3fa36b' },
@@ -2046,13 +2047,21 @@
     }
     function pintarCalc(id) {
       const e = CALC[id].expr, el = $(`#${id}-expr`);
-      el.textContent = e ? e.replace(/([+−×])/g, ' $1 ') : '0';
-      el.classList.toggle('vacio', !e);
-      // el número se encoge lo justo para caber; el cuadro mantiene siempre su altura
-      let tam = 46; el.style.fontSize = tam + 'px';
-      while (el.scrollWidth > el.clientWidth && tam > 18) { tam -= 2; el.style.fontSize = tam + 'px'; }
+      el.innerHTML = '<span class="imp-num">' + esc(e ? e.replace(/([+−×])/g, ' $1 ') : '0') + '</span>';
+      el.classList.toggle('imp-vacio', !e);
+      ajustarImporte(el);
       $(`#${id}-res`).textContent = /[+−×]/.test(e) ? '= ' + eur(evalExpr(e)) : '';
     }
+    // el número se encoge lo justo para caber a lo ancho; el cuadro no cambia de tamaño
+    function ajustarImporte(el, intentos = 0) {
+      const num = el.firstElementChild; if (!num) return;
+      num.style.fontSize = '46px';
+      const libre = el.clientWidth - 8;
+      if (libre <= 0) { if (intentos < 10) requestAnimationFrame(() => ajustarImporte(el, intentos + 1)); return; }
+      const ancho = num.getBoundingClientRect().width;
+      if (ancho > libre) num.style.fontSize = Math.max(18, Math.floor(46 * libre / ancho)) + 'px';
+    }
+    document.fonts?.ready.then(() => $$('.imp-expr').forEach(el => ajustarImporte(el)));
     function ponerCalc(id, cents) { CALC[id].expr = aTexto(cents); pintarCalc(id); }
     // en el ordenador también se puede escribir el importe con el teclado físico
     document.addEventListener('keydown', ev => {
