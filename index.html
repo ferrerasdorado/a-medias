@@ -192,7 +192,12 @@
     /* ── filtros ────────────────────────────────────── */
     .buscar { position:relative; margin-bottom:12px; }
     .buscar svg { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--tenue); }
-    .buscar .inp { padding-left:42px; border-radius:99px; }
+    .buscar .inp { padding-left:42px; padding-right:44px; border-radius:99px; }
+    .buscar .inp::-webkit-search-cancel-button { -webkit-appearance:none; display:none; }
+    .buscar-x { position:absolute; right:8px; top:50%; transform:translateY(-50%); width:30px; height:30px; border-radius:50%; background:var(--sup2); color:var(--suave); font-size:13px; font-weight:800; display:grid; place-items:center; }
+    .volver-bar { display:flex; align-items:center; gap:10px; margin:0 0 4px; }
+    .volver-bar button { flex:none; height:38px; padding:0 14px 0 10px; border-radius:99px; background:var(--sup); box-shadow:var(--sombra); font-weight:800; font-size:15px; color:var(--acento-tinta); }
+    .volver-bar b { font:800 21px var(--f2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .mesnav { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
     .mesnav .mn-flecha { width:42px; height:42px; border-radius:50%; background:var(--sup); box-shadow:var(--sombra); display:grid; place-items:center; flex:none; font-size:20px; font-weight:700; color:var(--suave); }
     .mesnav .mn-flecha:disabled { opacity:.3; }
@@ -725,7 +730,7 @@
         <div class="seg" data-gastos style="margin-bottom:14px"><button data-ir="resumen" class="">📊 Resumen</button><button data-ir="historial" class="on">📋 Historial</button></div>
         <div class="buscar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input class="inp" type="search" id="h-buscar" placeholder="Buscar concepto, sitio o nota…" enterkeyhint="search">
+          <input class="inp" type="search" id="h-buscar" placeholder="Buscar concepto, sitio o nota…" enterkeyhint="search"><button class="buscar-x" type="button" aria-label="Borrar búsqueda" hidden>✕</button>
         </div>
         <div class="mesnav" id="h-mesnav"></div>
         <div class="chips" id="h-cats"></div>
@@ -752,7 +757,7 @@
           <div id="el-hueco"></div>
           <div id="el-hoy"></div>
           <div class="buscar" style="margin-top:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input class="inp" id="el-buscar" type="search" placeholder="Buscar receta o ingrediente…" autocomplete="off" enterkeyhint="search"></div>
+            <input class="inp" id="el-buscar" type="search" placeholder="Buscar receta o ingrediente…" autocomplete="off" enterkeyhint="search"><button class="buscar-x" type="button" aria-label="Borrar búsqueda" hidden>✕</button></div>
           <div id="el-filtros"></div>
           <div id="el-lista" style="margin-top:6px"></div>
         </div>
@@ -977,7 +982,7 @@
     const SUPABASE_KEY = 'sb_publishable_d-eUrX-9AZRWNpczlofKEQ_fp299RSE';
 
     const CONFIGURADO = /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && !/PEGA/.test(SUPABASE_KEY);
-    const VERSION = '11.1';
+    const VERSION = '11.2';
 
     const CATS = [
       { id:'super',         n:'Súper',        e:'🛒', c:'#3fa36b' },
@@ -1745,6 +1750,7 @@
     }
     function renderHistorial() {
       const f = E.filtros;
+      $('#h-buscar').nextElementSibling.hidden = !$('#h-buscar').value;
       mesNav('#h-mesnav', f.mes, m => { f.mes = m; renderHistorial(); }, true);
       const enMes = x => f.mes === 'todo' || mesDe(x.fecha) === f.mes;
       const usadas = [...new Set(E.gastos.filter(enMes).map(g => g.categoria))];
@@ -1770,6 +1776,14 @@
       $('#h-lista').innerHTML = movs.length ? listaPorDias(movs) : `<div class="vacio"><span class="e">🔍</span><b>Nada por aquí</b>No hay movimientos con estos filtros.</div>`;
     }
     $('#h-buscar').addEventListener('input', ev => { E.filtros.texto = ev.target.value; renderHistorial(); });
+    // ✕ dentro de los buscadores: se ve solo si hay algo escrito y lo borra
+    $$('.buscar').forEach(b => {
+      const inp = b.querySelector('input'), x = b.querySelector('.buscar-x'); if (!inp || !x) return;
+      const ver = () => { x.hidden = !inp.value; };
+      inp.addEventListener('input', ver);
+      x.addEventListener('click', () => { inp.value = ''; inp.dispatchEvent(new Event('input')); inp.focus(); vibrar(); });
+      ver();
+    });
 
     // resumen
     function renderResumen() {
@@ -3807,11 +3821,16 @@
       else if (k.startsWith('d:')) EL.dietas = [k.slice(2)];
       else if (k.startsWith('tipo:')) EL.tipo = k.slice(5);
       else if (k.startsWith('pais:')) EL.pais = k.slice(5);
-      EL.max = 40; pintarElegir(); window.scrollTo({ top: $('#el-buscar').getBoundingClientRect().top + scrollY - 16, behavior: sinMovimiento() ? 'auto' : 'smooth' });
+      EL.max = 40; pintarElegir(); window.scrollTo({ top: 0, behavior: sinMovimiento() ? 'auto' : 'smooth' });
     }
     function pintarHoy() {
       const el = $('#el-hoy');
-      if (!sinFiltros()) { el.innerHTML = ''; return; }
+      if (!sinFiltros()) {
+        if (EL.hueco) { el.innerHTML = ''; return; }
+        const q = $('#el-buscar').value.trim();
+        el.innerHTML = `<div class="volver-bar"><button type="button" data-volver>‹ Volver</button><b>${esc(tituloFiltro() || (q ? `«${q}»` : 'Recetas'))}</b></div>`;
+        return;
+      }
       const ahora = new Date().getHours(), momentoHoy = ahora < 16 ? 'comida' : 'cena', hoyPlato = platoDe(hoy(), momentoHoy);
       const tipos = momentoHoy === 'comida' ? ['primero', 'segundo', 'plato-unico'] : ['segundo', 'primero', 'entrante', 'plato-unico'];
       // primero lo que podéis hacer ya; entre iguales, vuestras favoritas que hace tiempo que no hacéis
@@ -3827,8 +3846,20 @@
         ${favs.length ? `<div class="sec-cab"><h3>❤️ Vuestras favoritas</h3></div><div class="carrusel">${favs.slice(0, 12).map(tarjetaReceta).join('')}</div>` : ''}
         <div class="sec-cab"><h3>Todas las recetas</h3></div>`;
     }
+    // nombre de la sección en la que estás (Bosch Serie 6, Airfryer, Vegano…)
+    function tituloFiltro() {
+      const ex = EXPLORAR.find(([k]) => (k === 'bosch' && EL.bosch) || (k === 'af' && EL.af && !EL.bosch) || (k === 'rapidas' && EL.rapidas) || (k === 'fav' && EL.fav) || (k === 'hechas' && EL.hechas)
+        || (k.startsWith('d:') && EL.dietas.length === 1 && EL.dietas[0] === k.slice(2)) || (k.startsWith('tipo:') && EL.tipo === k.slice(5)) || (k.startsWith('pais:') && EL.pais === k.slice(5)));
+      return ex ? `${ex[1]} ${ex[2]}` : EL.tengo ? '🧺 Con lo que tengo' : '';
+    }
+    function volverAExplorar() {
+      Object.assign(EL, { tengo: false, af: false, bosch: false, fav: false, hechas: false, rapidas: false, faciles: false, dietas: [], tipo: '', grupo: '', pais: '', abierto: false, max: 40 });
+      $('#el-buscar').value = ''; $('#el-buscar').dispatchEvent(new Event('input'));
+      window.scrollTo({ top: 0, behavior: sinMovimiento() ? 'auto' : 'smooth' }); vibrar();
+    }
     function pintarElegir() {
       pintarHoy();
+      $('#el-buscar').nextElementSibling.hidden = !$('#el-buscar').value;
       const qs = claveTienda($('#el-buscar').value).split(' ').filter(Boolean).map(raiz), paises = [...new Set(RECETAS.map(r => r.pais))].sort((a, b) => (b === 'España') - (a === 'España') || a.localeCompare(b, 'es'));
       const chip = (attr, val, txt, on) => `<button type="button" class="sug${on ? ' on' : ''}" ${attr}="${esc(val)}">${txt}</button>`;
       const activos = [EL.tengo && ['t:tengo', '🧺 Con lo que tengo'], EL.af && ['t:af', '🔥 Airfryer'], EL.bosch && ['t:bosch', '⭐ Bosch Serie 6'], EL.fav && ['t:fav', '❤️ Favoritas'], EL.hechas && ['t:hechas', '✓ Ya hechas'], EL.rapidas && ['t:rapidas', '⚡ En 30 min'], EL.faciles && ['t:faciles', '👌 Fáciles'],
@@ -3868,7 +3899,7 @@
       if (ev.target.closest('#el-mas')) { EL.max += 60; return pintarElegir(); }
       const b = ev.target.closest('[data-receta]'); if (!b) return; abrirReceta(b.dataset.receta, EL.hueco);
     });
-    $('#el-hoy').addEventListener('click', ev => { const x = ev.target.closest('[data-ex]'); if (x) return aplicarExplorar(x.dataset.ex); const b = ev.target.closest('[data-receta]'); if (b) abrirReceta(b.dataset.receta); });
+    $('#el-hoy').addEventListener('click', ev => { if (ev.target.closest('[data-volver]')) return volverAExplorar(); const x = ev.target.closest('[data-ex]'); if (x) return aplicarExplorar(x.dataset.ex); const b = ev.target.closest('[data-receta]'); if (b) abrirReceta(b.dataset.receta); });
 
     // ── modo cocina: un paso por pantalla, letra grande y temporizador ─
     let CK = null, avisoTempo = null;
