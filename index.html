@@ -976,7 +976,7 @@
     const SUPABASE_KEY = 'sb_publishable_d-eUrX-9AZRWNpczlofKEQ_fp299RSE';
 
     const CONFIGURADO = /^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL) && !/PEGA/.test(SUPABASE_KEY);
-    const VERSION = '4.0';
+    const VERSION = '11.0';
 
     const CATS = [
       { id:'super',         n:'Súper',        e:'🛒', c:'#3fa36b' },
@@ -1556,6 +1556,8 @@
       'ver-recetas': () => { E.vistaRecetas = 'recetario'; irA('recetas'); },
       'faltan-menu': () => anadirFaltan(faltanMenu()),
       'terminar-compra': () => abrirTerminar(),
+      actualizar: () => buscarVersion(true),
+      'recargar-app': () => recargarApp(),
       'todas-tiendas': () => { E.todasTiendas = !E.todasTiendas; renderResumen(); },
       salir: async () => { if (demo) { escribirLS('gc:demo', null); location.href = location.pathname; return; } await api?.salir(); },
     };
@@ -1627,6 +1629,7 @@
       const desde = E.gastos.filter(g => !liq || g.fecha > liq.fecha || (g.fecha === liq.fecha && String(g.creado) > String(liq.creado))).length;
       const sub = liq && !desde ? `Todo saldado el ${diaLargo(liq.fecha)}` : liq ? `${desde} ${desde === 1 ? 'gasto' : 'gastos'} desde el último pago, el ${diaLargo(liq.fecha)}` : `${E.gastos.length} ${E.gastos.length === 1 ? 'gasto' : 'gastos'} apuntados`;
       const [A, B] = E.perfiles;
+      if (E.versionNueva) html += `<button class="banner" style="margin:0 0 14px;background:linear-gradient(120deg,#1d6b58,#2f9a77 60%,#43b892)" data-accion="recargar-app"><span class="e">🔄</span><span><b>Hay una versión nueva de la app</b><small>Toca para actualizar. No se pierde nada.</small></span></button>`;
       html += `<section class="hero${s === 0 ? ' paz' : ''}">
         <div class="hero-et">${s === 0 ? 'Estáis en paz ✨' : s > 0 ? `${esc(nombre(otro))} te debe` : `Le debes a ${esc(nombre(otro))}`}</div>
         <div class="hero-num num" id="hero-num" data-v="${heroPrevio}">${eur(heroPrevio)}</div>
@@ -1898,6 +1901,10 @@
           <div class="aj-fila"><span>Presupuestos<small>Límite al mes por categoría</small></span><button class="chip" type="button" data-accion="presupuestos">Editar</button></div>
           <div class="aj-fila"><span>Exportar a Excel<small>Todos los gastos y pagos en un CSV</small></span><button class="chip" type="button" id="aj-csv">Descargar</button></div>
           ${demo ? `<div class="aj-fila"><span>Datos de ejemplo<small>Vuelve a generar la demo desde cero</small></span><button class="chip" type="button" id="aj-reset">Reiniciar</button></div>` : ''}
+        </section>
+        <div class="aj-sec">App</div>
+        <section class="card">
+          <div class="aj-fila"><span>🔄 Actualizar app<small id="aj-ver">Versión ${VERSION}${E.versionNueva ? ` · hay una nueva: ${esc(E.versionNueva)}` : ''}</small></span><button class="chip" type="button" data-accion="actualizar">${E.versionNueva ? 'Actualizar' : 'Comprobar'}</button></div>
         </section>
         <div class="aj-sec">Cuenta</div>
         <section class="card">
@@ -3339,7 +3346,7 @@
     const BASICOS_REC = new Set(['sal', 'agua', 'aceite de oliva', 'aceite de girasol', 'aceite', 'pimienta negra', 'vinagre', 'azucar', 'pimenton dulce', 'laurel', 'oregano', 'aceite de oliva virgen extra', 'sal gruesa', 'hielo']);
     function cargarRecetas() {
       if (RECETAS.length) return Promise.resolve(RECETAS);
-      return cargandoRecetas ||= fetch('recetas.json').then(r => { if (!r.ok) throw new Error('No se ha podido cargar el recetario'); return r.json(); })
+      return cargandoRecetas ||= fetch('recetas.json?v=' + VERSION).then(r => { if (!r.ok) throw new Error('No se ha podido cargar el recetario'); return r.json(); })
         .then(lst => { RECETAS = lst.map(r => ({ ...r, k: claveTienda(r.n + ' ' + r.ing.map(i => i.i).join(' ')), ing: r.ing.map(i => ({ ...i, basico: BASICOS_REC.has(claveTienda(i.i)) })) })); memoEstado = null; return RECETAS; })
         .catch(e => { cargandoRecetas = null; throw e; });
     }
@@ -4107,6 +4114,32 @@
       clearTimeout(tAviso);
       tAviso = setTimeout(() => t.classList.remove('on'), deshacer ? ms + 1500 : ms);
     }
+
+    // ── actualizaciones: mira si hay una versión publicada más nueva que la que está abierta ──
+    async function versionPublicada() {
+      const r = await fetch('./?_=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error('Sin conexión');
+      return ((await r.text()).match(/const VERSION = '([^']+)'/) || [])[1] || null;
+    }
+    // recarga saltándose la caché del iPhone (dirección nueva cada vez)
+    function recargarApp() {
+      const q = new URLSearchParams(location.search); q.set('v', Date.now().toString(36));
+      location.replace(location.pathname + '?' + q.toString().replace(/=(&|$)/g, '$1'));
+    }
+    async function buscarVersion(aMano) {
+      if (aMano && E.versionNueva) return recargarApp();
+      try {
+        const v = await versionPublicada();
+        if (v && v !== VERSION) {
+          E.versionNueva = v; if (E.yo && E.perfiles.length) renderTodo();
+          if (aMano) recargarApp();
+        } else if (aMano) aviso(`✓ Tenéis la última versión (${VERSION})`);
+      } catch (e) { if (aMano) aviso('No se ha podido comprobar: ' + traducirError(e)); }
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') buscarVersion(false); });
+    setTimeout(() => buscarVersion(false), 4000);
+    // quita el ?v= de la dirección tras actualizar, para que no se quede en la barra
+    if (new URLSearchParams(location.search).has('v')) { const q = new URLSearchParams(location.search); q.delete('v'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q.toString().replace(/=(&|$)/g, '$1') : '')); }
 
     arrancar().catch(e => { mostrarVista('v-login'); msg('#login-msg', traducirError(e), 'error'); });
   </script>
